@@ -1,4 +1,4 @@
-version: '3.8'
+# version: '3'
 services:                                          # 建立 N 個服務
   flask:
     build: # 建立指令
@@ -10,18 +10,25 @@ services:                                          # 建立 N 個服務
     env_file: # 將執行 docker-compose up 的當前資料夾中 .env匯入到 docker
       - .env
     volumes:
-      - /home/stanley/Documents/lineBot:/app
+      - ./lineBot:/app
     ports:
       - "5000:5000"
     networks:
       - my-network
 
   ngrok:
-    image: ngrok/ngrok:latest
-    command: ["http", "5000"]
-    environment:
-      - NGROK_AUTHTOKEN=${NGROK_AUTHTOKEN}
-    network_mode: "host"
+    build:
+      context: ./ngrok
+      dockerfile: Dockerfile
+    container_name: my-ngrok
+    depends_on:
+      - flask
+    env_file:
+      - .env
+    volumes:
+      - ./ngrok/ngrok.yml:/etc/ngrok.yml
+    networks:
+      - my-network
 
   mongo:                                           # 服務名稱
     container_name: my-mongo                       # 容器名稱
