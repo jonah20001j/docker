@@ -1,12 +1,12 @@
 # version: '3'
 services:                                          # 建立 N 個服務
-  flask:
+  lineBotReply:
     build: # 建立指令
       # 當前 docker-compose 目錄 所指向的目錄尋找 Dockerfile
       context: ./lineBot
       dockerfile: Dockerfile
-    container_name: my-flask             # 容器名稱
-    image: flask_test
+    container_name: linebot-reply-container             # 容器名稱
+    image: flask_reply
     env_file: # 將執行 docker-compose up 的當前資料夾中 .env匯入到 docker
       - .env
     volumes:
@@ -16,13 +16,33 @@ services:                                          # 建立 N 個服務
     networks:
       - my-network
 
+  lineBotPushNotification:
+    build: # 建立指令
+      # 當前 docker-compose 目錄 所指向的目錄尋找 Dockerfile
+      context: ./lineBotAutoMessage
+      dockerfile: Dockerfile
+    container_name: linebot-push-container             # 容器名稱
+    image: flask_push
+    env_file: # 將執行 docker-compose up 的當前資料夾中 .env匯入到 docker
+      - .env
+    # depends_on:      # 會需要等到 flask 開啟後才會開啟 ngrok 服務
+    #   - ngrok
+    volumes:
+      - ./lineBotAutoMessage:/app
+    ports:
+      - "5001:5001"
+    networks:
+      - my-network
+
   ngrok:
     build:
       context: ./ngrok
       dockerfile: Dockerfile
     container_name: my-ngrok
-    depends_on:
-      - flask
+    ports:
+      - "4040:4040"  # 開啟 ngrok 的 API 端口
+    depends_on:      # 會需要等到 flask 開啟後才會開啟 ngrok 服務
+      - lineBotReply
     env_file:
       - .env
     volumes:
@@ -82,7 +102,6 @@ services:                                          # 建立 N 個服務
     networks:
       - my-network
 
-  # node express 和 python flask 功能類似 短期不開放使用express
   # express:
   #   build: # 建立指令
   #     # 當前 docker-compose 目錄 所指向的目錄尋找 Dockerfile
