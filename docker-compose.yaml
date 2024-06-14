@@ -82,19 +82,20 @@ services:                                          # 建立 N 個服務
     networks:
       - my-network
 
-  express:
-    build: # 建立指令
-      # 當前 docker-compose 目錄 所指向的目錄尋找 Dockerfile
-      context: ./express
-      dockerfile: Dockerfile
-    container_name: my-nodeHellowWorld             # 容器名稱
-    image: express_test
-    volumes:
-      - /home/stanley/Documents/nodejsTest:/usr/src/app
-    ports:
-      - "3030:3030"
-    networks:
-      - my-network
+  # node express 和 python flask 功能類似 短期不開放使用express
+  # express:
+  #   build: # 建立指令
+  #     # 當前 docker-compose 目錄 所指向的目錄尋找 Dockerfile
+  #     context: ./express
+  #     dockerfile: Dockerfile
+  #   container_name: my-nodeHellowWorld             # 容器名稱
+  #   image: express_test
+  #   volumes:
+  #     - /home/stanley/Documents/nodejsTest:/usr/src/app
+  #   ports:
+  #     - "3030:3030"
+  #   networks:
+  #     - my-network
 
   react:
     build: # 建立指令
