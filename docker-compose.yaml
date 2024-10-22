@@ -1,27 +1,54 @@
-version: '3.8'
+# version: '3'
 services:                                          # 建立 N 個服務
-  flask:
+  lineBotReply:
     build: # 建立指令
       # 當前 docker-compose 目錄 所指向的目錄尋找 Dockerfile
       context: ./lineBot
       dockerfile: Dockerfile
-    container_name: my-flask             # 容器名稱
-    image: flask_test
+    container_name: linebot-reply-container             # 容器名稱
+    image: flask_reply
     env_file: # 將執行 docker-compose up 的當前資料夾中 .env匯入到 docker
       - .env
     volumes:
-      - /home/stanley/Documents/lineBot:/app
+      - ./lineBot:/app
     ports:
       - "5000:5000"
     networks:
       - my-network
 
+  lineBotPushNotification:
+    build: # 建立指令
+      # 當前 docker-compose 目錄 所指向的目錄尋找 Dockerfile
+      context: ./lineBotAutoMessage
+      dockerfile: Dockerfile
+    container_name: linebot-push-container             # 容器名稱
+    image: flask_push
+    env_file: # 將執行 docker-compose up 的當前資料夾中 .env匯入到 docker
+      - .env
+    # depends_on:      # 會需要等到 flask 開啟後才會開啟 ngrok 服務
+    #   - ngrok
+    volumes:
+      - ./lineBotAutoMessage:/app
+    ports:
+      - "5001:5001"
+    networks:
+      - my-network
+
   ngrok:
-    image: ngrok/ngrok:latest
-    command: ["http", "5000"]
-    environment:
-      - NGROK_AUTHTOKEN=${NGROK_AUTHTOKEN}
-    network_mode: "host"
+    build:
+      context: ./ngrok
+      dockerfile: Dockerfile
+    container_name: my-ngrok
+    ports:
+      - "4040:4040"  # 開啟 ngrok 的 API 端口
+    depends_on:      # 會需要等到 flask 開啟後才會開啟 ngrok 服務
+      - lineBotReply
+    env_file:
+      - .env
+    volumes:
+      - ./ngrok/ngrok.yml:/etc/ngrok.yml
+    networks:
+      - my-network
 
   mongo:                                           # 服務名稱
     container_name: my-mongo                       # 容器名稱
@@ -75,19 +102,19 @@ services:                                          # 建立 N 個服務
     networks:
       - my-network
 
-  express:
-    build: # 建立指令
-      # 當前 docker-compose 目錄 所指向的目錄尋找 Dockerfile
-      context: ./express
-      dockerfile: Dockerfile
-    container_name: my-nodeHellowWorld             # 容器名稱
-    image: express_test
-    volumes:
-      - /home/stanley/Documents/nodejsTest:/usr/src/app
-    ports:
-      - "3030:3030"
-    networks:
-      - my-network
+  # express:
+  #   build: # 建立指令
+  #     # 當前 docker-compose 目錄 所指向的目錄尋找 Dockerfile
+  #     context: ./express
+  #     dockerfile: Dockerfile
+  #   container_name: my-nodeHellowWorld             # 容器名稱
+  #   image: express_test
+  #   volumes:
+  #     - /home/stanley/Documents/nodejsTest:/usr/src/app
+  #   ports:
+  #     - "3030:3030"
+  #   networks:
+  #     - my-network
 
   react:
     build: # 建立指令
@@ -107,6 +134,28 @@ services:                                          # 建立 N 個服務
       - "3000:3000"
     networks:
       - my-network
+
+  elasticsearch:
+    image: docker.elastic.co/elasticsearch/elasticsearch:7.10.0
+    environment:
+      - discovery.type=single-node
+    ports:
+      - "9200:9200"
+    volumes:
+      - es_data:/usr/share/elasticsearch/data
+
+  logstash:
+    image: docker.elastic.co/logstash/logstash:7.10.0
+    volumes:
+      - ./logstash/pipeline:/usr/share/logstash/pipeline
+    ports:
+      - "5000:5000" # Logstash 收到其他應用的日誌
+      - "9600:9600" # Logstash API 端口
+
+  kibana:
+    image: docker.elastic.co/kibana/kibana:7.10.0
+    ports:
+      - "5601:5601"
 
 networks:
   my-network:
